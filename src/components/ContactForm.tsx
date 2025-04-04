@@ -8,6 +8,12 @@ interface Form {
   message: string;
 }
 
+interface EmailData {
+  email: string;
+  subject: string;
+  message: string;
+}
+
 export default function ContactForm() {
   const [form, setForm] = useState<Form>({
     from: '',
@@ -22,13 +28,44 @@ export default function ContactForm() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const sendEmail = async (data: EmailData) => {
+    try {
+      // 데이터 필드명 수정: 'email'을 'to'로 변경
+      const payload = {
+        to: data.email,
+        subject: data.subject,
+        message: data.message,
+      };
+
+      const response = await fetch('/api/sendmail', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error('Email send failed');
+      setBanner({ message: '이메일을 성공적으로 보냈습니다!', state: 'success' });
+      setTimeout(() => {
+        setBanner(null);
+      }, 3000);
+    } catch (error) {
+      console.error(error);
+      setBanner({ message: '이메일 전송에 실패했습니다.', state: 'error' });
+      setTimeout(() => {
+        setBanner(null);
+      }, 3000);
+    }
+  };
+
   const onSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log(form);
-    setBanner({ message: '성공했어~', state: 'success' });
-    setTimeout(() => {
-      setBanner(null);
-    }, 3000);
+    sendEmail({
+      email: form.from,
+      subject: form.subject,
+      message: form.message,
+    });
   };
 
   return (
